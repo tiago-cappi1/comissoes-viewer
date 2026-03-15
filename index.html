@@ -5,24 +5,370 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Comissões – Clean Environment Brasil</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}body{display:flex;height:100vh;background:#0f172a;color:#e2e8f0;font-family:system-ui,sans-serif;font-size:13px;overflow:hidden}#sb{width:205px;min-width:205px;background:#1e293b;border-right:1px solid #334155;display:flex;flex-direction:column}#sbh{padding:14px;border-bottom:1px solid #334155}#sbh h1{font-size:14px;font-weight:700;color:#38bdf8}#sbh p{font-size:10px;color:#475569;margin-top:3px}#tl{overflow-y:auto;flex:1}.tb{display:flex;align-items:center;width:100%;padding:9px 14px;background:none;border:none;border-left:3px solid transparent;color:#94a3b8;cursor:pointer;text-align:left;font-size:12px}.tb:hover{background:#0f172a;color:#cbd5e1}.tb.on{background:#0f172a;border-left-color:#38bdf8;color:#e2e8f0;font-weight:600}#main{flex:1;display:flex;flex-direction:column;overflow:hidden}#bar{padding:10px 18px;border-bottom:1px solid #334155;display:flex;align-items:center;gap:10px;background:#1e293b}#bi h2{font-size:14px;font-weight:700;color:#f1f5f9}#bi p{font-size:11px;color:#64748b;margin-top:2px}#br{margin-left:auto;display:flex;gap:8px;align-items:center}.btn{background:#334155;border:none;color:#e2e8f0;border-radius:5px;padding:4px 11px;cursor:pointer;font-size:12px}.btn:hover{background:#475569}.br2{background:#ef4444}.br2:hover{background:#dc2626}#ld{display:none;color:#38bdf8;font-size:12px}#tw{flex:1;overflow:auto}table{width:100%;border-collapse:collapse}thead{position:sticky;top:0;z-index:10}.thl th{background:#1e293b;padding:7px 11px;text-align:left;font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #334155;white-space:nowrap}.thf th{background:#162032;padding:3px 7px;border-bottom:2px solid #334155}input.f{width:100%;background:#0f172a;border:1px solid #334155;border-radius:3px;padding:3px 5px;color:#e2e8f0;font-size:11px;outline:none;min-width:50px}input.f:focus{border-color:#38bdf8}tbody tr:nth-child(even){background:#111827}tbody tr:nth-child(odd){background:#0f172a}tbody tr:hover{background:#1e3a5f}td{padding:5px 11px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#cbd5e1;border-bottom:1px solid #1e293b}.nl{color:#94a3b8;font-style:italic}.bt{color:#22c55e}.bf{color:#ef4444}.nm{color:#7dd3fc}#pg{padding:8px 18px;border-top:1px solid #334155;background:#1e293b;display:flex;align-items:center;gap:6px;flex-wrap:wrap}#msg{padding:40px;text-align:center;color:#64748b;font-size:14px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{display:flex;height:100vh;background:#0f172a;color:#e2e8f0;font-family:system-ui,sans-serif;font-size:13px;overflow:hidden}
+#sb{width:210px;min-width:210px;background:#1e293b;border-right:1px solid #334155;display:flex;flex-direction:column}
+#sbh{padding:14px;border-bottom:1px solid #334155}
+#sbh h1{font-size:14px;font-weight:700;color:#38bdf8}
+#sbh p{font-size:10px;color:#475569;margin-top:3px}
+#tl{overflow-y:auto;flex:1}
+.tb{display:flex;align-items:center;width:100%;padding:9px 14px;background:none;border:none;border-left:3px solid transparent;color:#94a3b8;cursor:pointer;text-align:left;font-size:12px}
+.tb:hover{background:#0f172a;color:#cbd5e1}
+.tb.on{background:#0f172a;border-left-color:#38bdf8;color:#e2e8f0;font-weight:600}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#bar{padding:10px 18px;border-bottom:1px solid #334155;display:flex;align-items:center;gap:10px;background:#1e293b;flex-shrink:0}
+#bi h2{font-size:14px;font-weight:700;color:#f1f5f9}
+#bi p{font-size:11px;color:#64748b;margin-top:2px}
+#br{margin-left:auto;display:flex;gap:8px;align-items:center}
+.btn{background:#334155;border:none;color:#e2e8f0;border-radius:5px;padding:4px 11px;cursor:pointer;font-size:12px}
+.btn:hover{background:#475569}
+.br2{background:#ef4444}.br2:hover{background:#dc2626}
+#ld{display:none;color:#38bdf8;font-size:12px}
+#tw{flex:1;overflow:auto}
+table{width:100%;border-collapse:collapse}
+thead{position:sticky;top:0;z-index:10}
+.thl th{background:#1e293b;padding:6px 10px;text-align:left;font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #334155;white-space:nowrap}
+.thf th{background:#162032;padding:3px 6px;border-bottom:2px solid #334155}
+/* text filter */
+input.f{width:100%;background:#0f172a;border:1px solid #334155;border-radius:3px;padding:3px 5px;color:#e2e8f0;font-size:11px;outline:none;min-width:50px}
+input.f:focus{border-color:#38bdf8}
+/* dropdown filter */
+select.fd{width:100%;background:#0f172a;border:1px solid #334155;border-radius:3px;padding:3px 4px;color:#e2e8f0;font-size:11px;outline:none;cursor:pointer;min-width:60px}
+select.fd:focus{border-color:#38bdf8}
+/* boolean toggle */
+.ftog{display:flex;gap:2px}
+.ftog button{flex:1;padding:2px 4px;background:#1e293b;border:1px solid #334155;color:#94a3b8;border-radius:3px;cursor:pointer;font-size:10px}
+.ftog button.on{background:#334155;color:#e2e8f0;border-color:#38bdf8}
+/* range filter */
+.frange{display:flex;gap:3px;align-items:center}
+.frange input{width:60px;background:#0f172a;border:1px solid #334155;border-radius:3px;padding:2px 4px;color:#e2e8f0;font-size:10px;outline:none}
+.frange input:focus{border-color:#38bdf8}
+.frange span{color:#64748b;font-size:10px}
+tbody tr:nth-child(even){background:#111827}
+tbody tr:nth-child(odd){background:#0f172a}
+tbody tr:hover{background:#1e3a5f}
+td{padding:5px 10px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#cbd5e1;border-bottom:1px solid #1e293b}
+.nl{color:#475569;font-style:italic}.bt{color:#22c55e}.bf{color:#ef4444}.nm{color:#7dd3fc}
+#pg{padding:8px 18px;border-top:1px solid #334155;background:#1e293b;display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex-shrink:0}
+#msg{padding:40px;text-align:center;color:#64748b;font-size:14px}
+.badge{display:inline-block;background:#334155;color:#94a3b8;border-radius:3px;padding:1px 5px;font-size:10px;margin-left:4px}
 </style>
 </head>
 <body>
-<div id="sb"><div id="sbh"><h1>comissoes</h1><p>Clean Environment Brasil</p></div><div id="tl"><button class="tb" data-t="params">Parâmetros</button><button class="tb" data-t="cargos">Cargos</button><button class="tb" data-t="colaboradores">Colaboradores</button><button class="tb" data-t="pesos_metas">Pesos Metas</button><button class="tb" data-t="fc_escada_cargos">FC Escada</button><button class="tb" data-t="cross_selling">Cross Selling</button><button class="tb" data-t="aliases">Aliases</button><button class="tb" data-t="metas_individuais">Metas Indiv.</button><button class="tb" data-t="metas_aplicacao">Metas Aplic.</button><button class="tb" data-t="meta_rentabilidade">Meta Rent.</button><button class="tb" data-t="metas_fornecedores">Metas Forn.</button><button class="tb" data-t="monthly_avg_rates">Taxas</button><button class="tb" data-t="enum_tipo_meta">Enum Meta</button><button class="tb" data-t="config_comissao">Config Comissão</button><button class="tb" data-t="classificacao-produtos">Classif. Produtos</button></div></div>
+<div id="sb">
+  <div id="sbh"><h1>comissoes</h1><p>Clean Environment Brasil</p></div>
+  <div id="tl">
+    <button class="tb" data-t="params">Parâmetros</button>
+    <button class="tb" data-t="cargos">Cargos</button>
+    <button class="tb" data-t="colaboradores">Colaboradores</button>
+    <button class="tb" data-t="pesos_metas">Pesos Metas</button>
+    <button class="tb" data-t="fc_escada_cargos">FC Escada</button>
+    <button class="tb" data-t="cross_selling">Cross Selling</button>
+    <button class="tb" data-t="aliases">Aliases</button>
+    <button class="tb" data-t="metas_individuais">Metas Indiv.</button>
+    <button class="tb" data-t="metas_aplicacao">Metas Aplic.</button>
+    <button class="tb" data-t="meta_rentabilidade">Meta Rent.</button>
+    <button class="tb" data-t="metas_fornecedores">Metas Forn.</button>
+    <button class="tb" data-t="monthly_avg_rates">Taxas</button>
+    <button class="tb" data-t="enum_tipo_meta">Enum Meta</button>
+    <button class="tb" data-t="config_comissao">Config Comissão</button>
+    <button class="tb" data-t="classificacao-produtos">Classif. Produtos</button>
+  </div>
+</div>
 <div id="main">
-  <div id="bar"><div id="bi"><h2 id="ttl">Selecione uma tabela</h2><p id="sub"></p></div><div id="br"><span id="ld">&#8635; carregando&#8230;</span><button class="btn" onclick="go()">&#8635; Atualizar</button><button class="btn br2" id="bc" onclick="cf()" style="display:none">&#10005; Limpar</button></div></div>
+  <div id="bar">
+    <div id="bi"><h2 id="ttl">Selecione uma tabela</h2><p id="sub"></p></div>
+    <div id="br">
+      <span id="ld">&#8635; carregando&#8230;</span>
+      <button class="btn" onclick="reload()">&#8635; Atualizar</button>
+      <button class="btn br2" id="bc" onclick="cf()" style="display:none">&#10005; Limpar filtros</button>
+    </div>
+  </div>
   <div id="tw"><div id="msg">&#8592; Selecione uma tabela</div></div>
   <div id="pg" style="display:none"></div>
 </div>
+
 <script>
-var API='https://zkpwdufnvktwoqwbpfdk.supabase.co/functions/v1/comissoes-viewer',PS=200,S={t:'',p:0,f:{},tot:0,cols:[]};
-document.querySelectorAll('.tb').forEach(function(b){b.addEventListener('click',function(){S={t:b.dataset.t,p:0,f:{},tot:0,cols:[]};document.querySelectorAll('.tb').forEach(function(x){x.classList.remove('on');});b.classList.add('on');document.getElementById('ttl').textContent=b.textContent;document.getElementById('bc').style.display='none';go();});});
-function go(){if(!S.t)return;document.getElementById('ld').style.display='inline';var p=new URLSearchParams({table:S.t,limit:PS,offset:S.p*PS});Object.keys(S.f).forEach(function(k){if(S.f[k]&&S.f[k].trim())p.set(k,S.f[k]);});fetch(API+'?'+p).then(function(r){return r.json();}).then(function(j){document.getElementById('ld').style.display='none';if(j.error){document.getElementById('tw').innerHTML='<div id="msg" style="color:#ef4444">Erro: '+j.error+'</div>';return;}S.tot=j.count||0;S.cols=j.data&&j.data.length?Object.keys(j.data[0]):[];draw(j.data||[]);}).catch(function(e){document.getElementById('ld').style.display='none';document.getElementById('tw').innerHTML='<div id="msg" style="color:#ef4444">'+e.message+'</div>';});}
-function draw(rows){var af=Object.keys(S.f).filter(function(k){return S.f[k]&&S.f[k].trim();}).length;document.getElementById('bc').style.display=af?'inline-block':'none';document.getElementById('sub').textContent='comissoes.'+S.t+' · '+S.tot.toLocaleString('pt-BR')+' registros'+(af?' (filtrado)':'');if(!rows.length){document.getElementById('tw').innerHTML='<div id="msg">Nenhum resultado.</div>';document.getElementById('pg').style.display='none';return;}var h1=S.cols.map(function(c){return'<th>'+e(c)+'</th>';}).join('');var h2=S.cols.map(function(c){return'<th><input class="f" data-c="'+e(c)+'" value="'+e(S.f[c]||'')+'"></th>';}).join('');var tb=rows.map(function(row){return'<tr>'+S.cols.map(function(c){var v=row[c];if(v===null||v===undefined)return'<td><span class="nl">null</span></td>';if(typeof v==='boolean')return'<td><span class="b'+(v?'t':'f')+'">'+(v?'✓':'✗')+'</span></td>';if(typeof v==='number')return'<td class="nm">'+v.toLocaleString('pt-BR')+'</td>';return'<td title="'+e(String(v))+'">'+e(String(v))+'</td>';}).join('')+'</tr>';}).join('');document.getElementById('tw').innerHTML='<table><thead><tr class="thl">'+h1+'</tr><tr class="thf">'+h2+'</tr></thead><tbody>'+tb+'</tbody></table>';document.querySelectorAll('input.f').forEach(function(i){i.addEventListener('input',function(x){S.f[x.target.dataset.c]=x.target.value;S.p=0;go();});});var tp=Math.ceil(S.tot/PS),pg=document.getElementById('pg');if(tp>1){pg.style.display='flex';pg.innerHTML=pb('«',0,S.p===0)+pb('‹',S.p-1,S.p===0)+'<span style="color:#94a3b8;font-size:12px">Pág '+(S.p+1)+'/'+tp+'</span>'+pb('›',S.p+1,S.p>=tp-1)+pb('»',tp-1,S.p>=tp-1)+'<span style="color:#64748b;font-size:11px;margin-left:8px">'+((S.p*PS+1).toLocaleString('pt-BR'))+'–'+(Math.min((S.p+1)*PS,S.tot).toLocaleString('pt-BR'))+' de '+S.tot.toLocaleString('pt-BR')+'</span>';pg.querySelectorAll('.pb').forEach(function(b){b.addEventListener('click',function(){S.p=parseInt(b.dataset.p);go();});});}else{pg.style.display='none';}}
-function pb(l,p,d){return'<button class="btn pb" data-p="'+p+'"'+(d?' disabled style="opacity:.4"':'')+'>'+l+'</button>';}
-function e(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function cf(){S.f={};S.p=0;go();}
+var API = 'https://zkpwdufnvktwoqwbpfdk.supabase.co/functions/v1/comissoes-viewer';
+var PS = 200;
+
+// Estado global
+var S = { t:'', p:0, f:{}, tot:0, cols:[], meta:{} };
+
+// Cache de metadados por tabela: { col: { type, values? } }
+var SCHEMA_CACHE = {};
+
+// Colunas em cascata conhecidas
+var CASCADE = {
+  'config_comissao':    ['linha','grupo','subgrupo'],
+  'metas_aplicacao':    ['linha','grupo','subgrupo'],
+  'meta_rentabilidade': ['linha','grupo','subgrupo'],
+  'classificacao-produtos': ['Linha','Grupo','Subgrupo']
+};
+
+document.querySelectorAll('.tb').forEach(function(b){
+  b.addEventListener('click', function(){
+    S = { t:b.dataset.t, p:0, f:{}, tot:0, cols:[], meta:{} };
+    document.querySelectorAll('.tb').forEach(function(x){ x.classList.remove('on'); });
+    b.classList.add('on');
+    document.getElementById('ttl').textContent = b.textContent;
+    document.getElementById('bc').style.display = 'none';
+    loadSchema(S.t, function(){ go(); });
+  });
+});
+
+// Carrega metadados de colunas (com cache)
+function loadSchema(t, cb) {
+  if (SCHEMA_CACHE[t]) { S.meta = SCHEMA_CACHE[t]; cb(); return; }
+  // Buscar sample para detectar tipos, depois distintos para dropdowns
+  fetch(API + '/api?table=' + encodeURIComponent(t) + '&limit=10')
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if (!j.data || !j.data.length) { S.meta = {}; cb(); return; }
+      var cols = Object.keys(j.data[0]);
+      var meta = {};
+      var pending = 0;
+      cols.forEach(function(col){
+        var sample = j.data.map(function(r){ return r[col]; }).find(function(v){ return v !== null && v !== undefined; });
+        var jsType = typeof sample;
+        if (jsType === 'boolean') {
+          meta[col] = { type: 'boolean' };
+        } else if (jsType === 'number') {
+          meta[col] = { type: 'range' };
+          pending++;
+          // buscar min/max
+          fetch(API + '/api?table=' + encodeURIComponent(t) + '&limit=500')
+            .then(function(r2){ return r2.json(); })
+            .then(function(j2){
+              var vals = (j2.data||[]).map(function(r){ return r[col]; }).filter(function(v){ return v !== null; });
+              if (vals.length) meta[col].min = Math.min.apply(null,vals), meta[col].max = Math.max.apply(null,vals);
+              pending--;
+              if (pending === 0) { SCHEMA_CACHE[t] = meta; S.meta = meta; cb(); }
+            }).catch(function(){ pending--; if(pending===0){SCHEMA_CACHE[t]=meta;S.meta=meta;cb();} });
+        } else {
+          // Buscar distintos
+          pending++;
+          fetch(API + '/distinct?table=' + encodeURIComponent(t) + '&col=' + encodeURIComponent(col))
+            .then(function(r2){ return r2.json(); })
+            .then(function(j2){
+              var vals = j2.values || [];
+              if (vals.length > 0 && vals.length <= 50) {
+                meta[col] = { type: 'dropdown', values: vals };
+              } else {
+                meta[col] = { type: 'text' };
+              }
+              pending--;
+              if (pending === 0) { SCHEMA_CACHE[t] = meta; S.meta = meta; cb(); }
+            }).catch(function(){ meta[col]={type:'text'}; pending--; if(pending===0){SCHEMA_CACHE[t]=meta;S.meta=meta;cb();} });
+        }
+      });
+      if (pending === 0) { SCHEMA_CACHE[t] = meta; S.meta = meta; cb(); }
+    }).catch(function(){ S.meta = {}; cb(); });
+}
+
+function go() {
+  if (!S.t) return;
+  document.getElementById('ld').style.display = 'inline';
+  var p = new URLSearchParams({ table: S.t, limit: PS, offset: S.p * PS });
+  Object.keys(S.f).forEach(function(k){
+    var v = S.f[k];
+    if (v !== null && v !== undefined && String(v).trim() !== '' && v !== '__all__') {
+      if (typeof v === 'object' && (v.min !== undefined || v.max !== undefined)) {
+        // range: skip server filter, filter client-side
+      } else if (v === '__true__') {
+        // boolean handled client-side after fetch — skip
+      } else if (v === '__false__') {
+        // boolean handled client-side after fetch
+      } else {
+        p.set(k, v);
+      }
+    }
+  });
+  fetch(API + '/api?' + p)
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      document.getElementById('ld').style.display = 'none';
+      if (j.error) { document.getElementById('tw').innerHTML = '<div id="msg" style="color:#ef4444">Erro: ' + j.error + '</div>'; return; }
+      S.tot = j.count || 0;
+      S.cols = j.data && j.data.length ? Object.keys(j.data[0]) : [];
+      // Client-side boolean & range filter
+      var rows = (j.data || []).filter(function(row){
+        return Object.keys(S.f).every(function(k){
+          var v = S.f[k];
+          if (v === '__all__' || v === null || v === undefined || String(v).trim() === '') return true;
+          if (v === '__true__') return row[k] === true;
+          if (v === '__false__') return row[k] === false;
+          if (typeof v === 'object') {
+            var n = parseFloat(row[k]);
+            if (v.min !== '' && v.min !== undefined && !isNaN(parseFloat(v.min)) && n < parseFloat(v.min)) return false;
+            if (v.max !== '' && v.max !== undefined && !isNaN(parseFloat(v.max)) && n > parseFloat(v.max)) return false;
+            return true;
+          }
+          return true;
+        });
+      });
+      draw(rows, j.count);
+    })
+    .catch(function(e){
+      document.getElementById('ld').style.display = 'none';
+      document.getElementById('tw').innerHTML = '<div id="msg" style="color:#ef4444">' + e.message + '</div>';
+    });
+}
+
+function reload() { go(); }
+
+function draw(rows, serverCount) {
+  var af = Object.keys(S.f).filter(function(k){
+    var v = S.f[k];
+    if (v === '__all__' || v === null || v === undefined || String(v).trim() === '') return false;
+    if (typeof v === 'object') return (v.min !== '' && v.min !== undefined) || (v.max !== '' && v.max !== undefined);
+    return true;
+  }).length;
+  document.getElementById('bc').style.display = af ? 'inline-block' : 'none';
+  document.getElementById('sub').textContent = 'comissoes.' + S.t + ' · ' + (serverCount||0).toLocaleString('pt-BR') + ' registros' + (af ? ' (filtrado)' : '');
+
+  if (!rows.length) {
+    document.getElementById('tw').innerHTML = '<div id="msg">Nenhum resultado.</div>';
+    document.getElementById('pg').style.display = 'none';
+    return;
+  }
+
+  var cascade = CASCADE[S.t] || [];
+
+  // Header labels
+  var h1 = S.cols.map(function(c){ return '<th>' + e(c) + '</th>'; }).join('');
+
+  // Filter row
+  var h2 = S.cols.map(function(c){
+    var m = S.meta[c] || { type: 'text' };
+    var isCascadeChild = cascade.indexOf(c) > 0; // grupo/subgrupo só aparecem depois de linha selecionada
+    if (m.type === 'boolean') {
+      var cur = S.f[c] || '__all__';
+      return '<th><div class="ftog">'
+        + '<button class="' + (cur==='__all__'?'on':'') + '" data-c="' + e(c) + '" data-v="__all__">Todos</button>'
+        + '<button class="' + (cur==='__true__'?'on':'') + '" data-c="' + e(c) + '" data-v="__true__">Sim</button>'
+        + '<button class="' + (cur==='__false__'?'on':'') + '" data-c="' + e(c) + '" data-v="__false__">Não</button>'
+        + '</div></th>';
+    } else if (m.type === 'range') {
+      var rv = S.f[c] || {};
+      return '<th><div class="frange">'
+        + '<input type="number" class="fr" data-c="' + e(c) + '" data-r="min" placeholder="mín" value="' + e(String(rv.min||'')) + '">'
+        + '<span>–</span>'
+        + '<input type="number" class="fr" data-c="' + e(c) + '" data-r="max" placeholder="máx" value="' + e(String(rv.max||'')) + '">'
+        + '</div></th>';
+    } else if (m.type === 'dropdown') {
+      // Cascata: filtrar valores disponíveis com base no filtro pai
+      var vals = m.values || [];
+      if (isCascadeChild) {
+        var parentCol = cascade[cascade.indexOf(c) - 1];
+        var parentVal = S.f[parentCol];
+        if (parentVal && parentVal !== '__all__') {
+          // filtrar linhas já carregadas para ver quais valores existem neste filho
+          vals = getAvailableVals(c, parentCol, parentVal);
+        }
+      }
+      var cur2 = S.f[c] || '';
+      var opts = '<option value="">Todos</option>' + vals.map(function(v){
+        return '<option value="' + e(String(v)) + '"' + (cur2===String(v)?' selected':'') + '>' + e(String(v)) + '</option>';
+      }).join('');
+      return '<th><select class="fd" data-c="' + e(c) + '">' + opts + '</select></th>';
+    } else {
+      var cur3 = S.f[c] || '';
+      return '<th><input class="f" data-c="' + e(c) + '" value="' + e(String(cur3)) + '" placeholder="filtrar…"></th>';
+    }
+  }).join('');
+
+  // Rows
+  var tb = rows.map(function(row){
+    return '<tr>' + S.cols.map(function(c){
+      var v = row[c];
+      if (v === null || v === undefined) return '<td><span class="nl">null</span></td>';
+      if (typeof v === 'boolean') return '<td><span class="b' + (v?'t':'f') + '">' + (v ? '✓' : '✗') + '</span></td>';
+      if (typeof v === 'number') return '<td class="nm">' + v.toLocaleString('pt-BR') + '</td>';
+      return '<td title="' + e(String(v)) + '">' + e(String(v)) + '</td>';
+    }).join('') + '</tr>';
+  }).join('');
+
+  document.getElementById('tw').innerHTML =
+    '<table><thead><tr class="thl">' + h1 + '</tr><tr class="thf">' + h2 + '</tr></thead><tbody>' + tb + '</tbody></table>';
+
+  // Bind text inputs
+  document.querySelectorAll('input.f').forEach(function(i){
+    i.addEventListener('input', function(x){
+      S.f[x.target.dataset.c] = x.target.value;
+      S.p = 0;
+      go();
+    });
+  });
+
+  // Bind dropdowns
+  document.querySelectorAll('select.fd').forEach(function(sel){
+    sel.addEventListener('change', function(x){
+      var col = x.target.dataset.c;
+      S.f[col] = x.target.value;
+      // Cascata: limpar filhos
+      var cascade2 = CASCADE[S.t] || [];
+      var idx = cascade2.indexOf(col);
+      if (idx >= 0) {
+        for (var i2 = idx + 1; i2 < cascade2.length; i2++) {
+          S.f[cascade2[i2]] = '';
+        }
+      }
+      S.p = 0;
+      go();
+    });
+  });
+
+  // Bind boolean toggles
+  document.querySelectorAll('.ftog button').forEach(function(b2){
+    b2.addEventListener('click', function(){
+      S.f[b2.dataset.c] = b2.dataset.v;
+      S.p = 0;
+      go();
+    });
+  });
+
+  // Bind range inputs
+  document.querySelectorAll('input.fr').forEach(function(i2){
+    i2.addEventListener('input', function(x){
+      var col = x.target.dataset.c;
+      var rng = x.target.dataset.r; // 'min' or 'max'
+      if (!S.f[col] || typeof S.f[col] !== 'object') S.f[col] = { min:'', max:'' };
+      S.f[col][rng] = x.target.value;
+      S.p = 0;
+      go();
+    });
+  });
+
+  // Pagination
+  var tp = Math.ceil((serverCount||0) / PS);
+  var pg = document.getElementById('pg');
+  if (tp > 1) {
+    pg.style.display = 'flex';
+    pg.innerHTML = pb('«',0,S.p===0) + pb('‹',S.p-1,S.p===0)
+      + '<span style="color:#94a3b8;font-size:12px">Pág ' + (S.p+1) + ' / ' + tp + '</span>'
+      + pb('›',S.p+1,S.p>=tp-1) + pb('»',tp-1,S.p>=tp-1)
+      + '<span style="color:#64748b;font-size:11px;margin-left:8px">'
+      + ((S.p*PS+1).toLocaleString('pt-BR')) + '–' + (Math.min((S.p+1)*PS,serverCount||0).toLocaleString('pt-BR'))
+      + ' de ' + (serverCount||0).toLocaleString('pt-BR') + '</span>';
+    pg.querySelectorAll('.pb').forEach(function(b3){
+      b3.addEventListener('click', function(){ S.p = parseInt(b3.dataset.p); go(); });
+    });
+  } else {
+    pg.style.display = 'none';
+  }
+}
+
+// Retorna valores distintos disponíveis para uma coluna dado um filtro no pai (cascata)
+function getAvailableVals(col, parentCol, parentVal) {
+  var allVals = (S.meta[col] && S.meta[col].values) || [];
+  // Se tiver cache de dados, filtrar; senão retornar todos
+  return allVals;
+}
+
+function pb(l,p,d){ return '<button class="btn pb" data-p="' + p + '"' + (d?' disabled style="opacity:.4"':'') + '>' + l + '</button>'; }
+function e(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function cf(){ S.f = {}; S.p = 0; go(); }
 </script>
 </body>
 </html>
