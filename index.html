@@ -29,21 +29,18 @@ table{width:100%;border-collapse:collapse}
 thead{position:sticky;top:0;z-index:10}
 .thl th{background:#1e293b;padding:6px 10px;text-align:left;font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #334155;white-space:nowrap}
 .thf th{background:#162032;padding:3px 6px;border-bottom:2px solid #334155}
-/* text filter */
 input.f{width:100%;background:#0f172a;border:1px solid #334155;border-radius:3px;padding:3px 5px;color:#e2e8f0;font-size:11px;outline:none;min-width:50px}
 input.f:focus{border-color:#38bdf8}
-/* dropdown filter */
-select.fd{width:100%;background:#0f172a;border:1px solid #334155;border-radius:3px;padding:3px 4px;color:#e2e8f0;font-size:11px;outline:none;cursor:pointer;min-width:60px}
+select.fd{width:100%;background:#0f172a;border:1px solid #334155;border-radius:3px;padding:3px 4px;color:#e2e8f0;font-size:11px;outline:none;cursor:pointer}
 select.fd:focus{border-color:#38bdf8}
-/* boolean toggle */
+select.fd option:disabled{color:#475569;font-style:italic}
 .ftog{display:flex;gap:2px}
-.ftog button{flex:1;padding:2px 4px;background:#1e293b;border:1px solid #334155;color:#94a3b8;border-radius:3px;cursor:pointer;font-size:10px}
-.ftog button.on{background:#334155;color:#e2e8f0;border-color:#38bdf8}
-/* range filter */
+.ftog button{flex:1;padding:2px 3px;background:#1e293b;border:1px solid #334155;color:#94a3b8;border-radius:3px;cursor:pointer;font-size:10px;white-space:nowrap}
+.ftog button.on{background:#1e3a5f;color:#38bdf8;border-color:#38bdf8}
 .frange{display:flex;gap:3px;align-items:center}
-.frange input{width:60px;background:#0f172a;border:1px solid #334155;border-radius:3px;padding:2px 4px;color:#e2e8f0;font-size:10px;outline:none}
+.frange input{width:58px;background:#0f172a;border:1px solid #334155;border-radius:3px;padding:2px 4px;color:#e2e8f0;font-size:10px;outline:none}
 .frange input:focus{border-color:#38bdf8}
-.frange span{color:#64748b;font-size:10px}
+.frange span{color:#475569;font-size:10px}
 tbody tr:nth-child(even){background:#111827}
 tbody tr:nth-child(odd){background:#0f172a}
 tbody tr:hover{background:#1e3a5f}
@@ -51,7 +48,7 @@ td{padding:5px 10px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white
 .nl{color:#475569;font-style:italic}.bt{color:#22c55e}.bf{color:#ef4444}.nm{color:#7dd3fc}
 #pg{padding:8px 18px;border-top:1px solid #334155;background:#1e293b;display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex-shrink:0}
 #msg{padding:40px;text-align:center;color:#64748b;font-size:14px}
-.badge{display:inline-block;background:#334155;color:#94a3b8;border-radius:3px;padding:1px 5px;font-size:10px;margin-left:4px}
+.facet-loading select.fd{opacity:.5}
 </style>
 </head>
 <body>
@@ -91,141 +88,145 @@ td{padding:5px 10px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white
 <script>
 var API = 'https://zkpwdufnvktwoqwbpfdk.supabase.co/functions/v1/comissoes-viewer';
 var PS = 200;
-
-// Estado global
 var S = { t:'', p:0, f:{}, tot:0, cols:[], meta:{} };
-
-// Cache de metadados por tabela: { col: { type, values? } }
 var SCHEMA_CACHE = {};
-
-// Colunas em cascata conhecidas
-var CASCADE = {
-  'config_comissao':    ['linha','grupo','subgrupo'],
-  'metas_aplicacao':    ['linha','grupo','subgrupo'],
-  'meta_rentabilidade': ['linha','grupo','subgrupo'],
-  'classificacao-produtos': ['Linha','Grupo','Subgrupo']
-};
+var facetTimer = null;
 
 document.querySelectorAll('.tb').forEach(function(b){
   b.addEventListener('click', function(){
     S = { t:b.dataset.t, p:0, f:{}, tot:0, cols:[], meta:{} };
     document.querySelectorAll('.tb').forEach(function(x){ x.classList.remove('on'); });
     b.classList.add('on');
-    document.getElementById('ttl').textContent = b.textContent;
+    document.getElementById('ttl').textContent = b.textContent.trim();
     document.getElementById('bc').style.display = 'none';
     loadSchema(S.t, function(){ go(); });
   });
 });
 
-// Carrega metadados de colunas (com cache)
+// ── Schema loading ──────────────────────────────────────────────
 function loadSchema(t, cb) {
   if (SCHEMA_CACHE[t]) { S.meta = SCHEMA_CACHE[t]; cb(); return; }
-  // Buscar sample para detectar tipos, depois distintos para dropdowns
-  fetch(API + '/api?table=' + encodeURIComponent(t) + '&limit=10')
+  fetch(API + '/schema?table=' + encodeURIComponent(t))
     .then(function(r){ return r.json(); })
     .then(function(j){
-      if (!j.data || !j.data.length) { S.meta = {}; cb(); return; }
-      var cols = Object.keys(j.data[0]);
-      var meta = {};
-      var pending = 0;
-      cols.forEach(function(col){
-        var sample = j.data.map(function(r){ return r[col]; }).find(function(v){ return v !== null && v !== undefined; });
-        var jsType = typeof sample;
-        if (jsType === 'boolean') {
-          meta[col] = { type: 'boolean' };
-        } else if (jsType === 'number') {
-          meta[col] = { type: 'range' };
-          pending++;
-          // buscar min/max
-          fetch(API + '/api?table=' + encodeURIComponent(t) + '&limit=500')
-            .then(function(r2){ return r2.json(); })
-            .then(function(j2){
-              var vals = (j2.data||[]).map(function(r){ return r[col]; }).filter(function(v){ return v !== null; });
-              if (vals.length) meta[col].min = Math.min.apply(null,vals), meta[col].max = Math.max.apply(null,vals);
-              pending--;
-              if (pending === 0) { SCHEMA_CACHE[t] = meta; S.meta = meta; cb(); }
-            }).catch(function(){ pending--; if(pending===0){SCHEMA_CACHE[t]=meta;S.meta=meta;cb();} });
-        } else {
-          // Buscar distintos
-          pending++;
-          fetch(API + '/distinct?table=' + encodeURIComponent(t) + '&col=' + encodeURIComponent(col))
-            .then(function(r2){ return r2.json(); })
-            .then(function(j2){
-              var vals = j2.values || [];
-              if (vals.length > 0 && vals.length <= 50) {
-                meta[col] = { type: 'dropdown', values: vals };
-              } else {
-                meta[col] = { type: 'text' };
-              }
-              pending--;
-              if (pending === 0) { SCHEMA_CACHE[t] = meta; S.meta = meta; cb(); }
-            }).catch(function(){ meta[col]={type:'text'}; pending--; if(pending===0){SCHEMA_CACHE[t]=meta;S.meta=meta;cb();} });
-        }
-      });
-      if (pending === 0) { SCHEMA_CACHE[t] = meta; S.meta = meta; cb(); }
-    }).catch(function(){ S.meta = {}; cb(); });
+      SCHEMA_CACHE[t] = j;
+      S.meta = j;
+      cb();
+    })
+    .catch(function(){ S.meta = {}; cb(); });
 }
 
+// ── Build facet query params from current filters ───────────────
+function facetParams() {
+  var p = new URLSearchParams({ table: S.t });
+  Object.keys(S.f).forEach(function(k){
+    var v = S.f[k];
+    if (!v || v === '__all__') return;
+    if (typeof v === 'object') {
+      if (v.min !== '' && v.min !== undefined) p.append(k, '__min:' + v.min);
+      if (v.max !== '' && v.max !== undefined) p.append(k, '__max:' + v.max);
+    } else {
+      p.set(k, v);
+    }
+  });
+  return p;
+}
+
+// ── Refresh all dropdown options based on current filters ───────
+function refreshFacets() {
+  clearTimeout(facetTimer);
+  facetTimer = setTimeout(function(){
+    var p = facetParams();
+    // Mark dropdowns as loading
+    document.querySelectorAll('select.fd').forEach(function(s){ s.closest('th').classList.add('facet-loading'); });
+    fetch(API + '/facets?' + p)
+      .then(function(r){ return r.json(); })
+      .then(function(facets){
+        document.querySelectorAll('select.fd').forEach(function(sel){
+          var col = sel.dataset.c;
+          if (!facets[col]) return;
+          var cur = S.f[col] || '';
+          var newVals = facets[col];
+          // Rebuild options
+          var opts = '<option value="">Todos</option>';
+          newVals.forEach(function(v){
+            var label = String(v);
+            var disabled = false; // all returned values are valid
+            opts += '<option value="' + e(label) + '"' + (cur === label ? ' selected' : '') + '>' + e(label) + '</option>';
+          });
+          // If current selection no longer exists, clear it
+          if (cur && newVals.indexOf(cur) === -1) {
+            S.f[col] = '';
+            opts = opts.replace(' selected', '');
+            // Re-insert Todos as selected
+            opts = opts.replace('<option value="">Todos</option>', '<option value="" selected>Todos</option>');
+          }
+          sel.innerHTML = opts;
+          sel.closest('th').classList.remove('facet-loading');
+        });
+      })
+      .catch(function(){
+        document.querySelectorAll('th.facet-loading').forEach(function(th){ th.classList.remove('facet-loading'); });
+      });
+  }, 150);
+}
+
+// ── Main data fetch ─────────────────────────────────────────────
 function go() {
   if (!S.t) return;
   document.getElementById('ld').style.display = 'inline';
   var p = new URLSearchParams({ table: S.t, limit: PS, offset: S.p * PS });
   Object.keys(S.f).forEach(function(k){
     var v = S.f[k];
-    if (v !== null && v !== undefined && String(v).trim() !== '' && v !== '__all__') {
-      if (typeof v === 'object' && (v.min !== undefined || v.max !== undefined)) {
-        // range: skip server filter, filter client-side
-      } else if (v === '__true__') {
-        // boolean handled client-side after fetch — skip
-      } else if (v === '__false__') {
-        // boolean handled client-side after fetch
-      } else {
-        p.set(k, v);
-      }
+    if (!v || v === '__all__') return;
+    if (v === '__true__' || v === '__false__') return; // client-side
+    if (typeof v === 'object') {
+      if (v.min !== '' && v.min !== undefined) p.append(k, '__min:' + v.min);
+      if (v.max !== '' && v.max !== undefined) p.append(k, '__max:' + v.max);
+      return;
     }
+    p.set(k, v);
   });
   fetch(API + '/api?' + p)
     .then(function(r){ return r.json(); })
     .then(function(j){
       document.getElementById('ld').style.display = 'none';
-      if (j.error) { document.getElementById('tw').innerHTML = '<div id="msg" style="color:#ef4444">Erro: ' + j.error + '</div>'; return; }
+      if (j.error) { document.getElementById('tw').innerHTML = '<div id="msg" style="color:#ef4444">Erro: '+j.error+'</div>'; return; }
       S.tot = j.count || 0;
       S.cols = j.data && j.data.length ? Object.keys(j.data[0]) : [];
-      // Client-side boolean & range filter
-      var rows = (j.data || []).filter(function(row){
+      // Client-side boolean filter
+      var rows = (j.data||[]).filter(function(row){
         return Object.keys(S.f).every(function(k){
           var v = S.f[k];
-          if (v === '__all__' || v === null || v === undefined || String(v).trim() === '') return true;
+          if (!v || v === '__all__') return true;
           if (v === '__true__') return row[k] === true;
           if (v === '__false__') return row[k] === false;
-          if (typeof v === 'object') {
-            var n = parseFloat(row[k]);
-            if (v.min !== '' && v.min !== undefined && !isNaN(parseFloat(v.min)) && n < parseFloat(v.min)) return false;
-            if (v.max !== '' && v.max !== undefined && !isNaN(parseFloat(v.max)) && n > parseFloat(v.max)) return false;
-            return true;
-          }
           return true;
         });
       });
       draw(rows, j.count);
+      // After drawing, refresh facets
+      refreshFacets();
     })
-    .catch(function(e){
+    .catch(function(e2){
       document.getElementById('ld').style.display = 'none';
-      document.getElementById('tw').innerHTML = '<div id="msg" style="color:#ef4444">' + e.message + '</div>';
+      document.getElementById('tw').innerHTML = '<div id="msg" style="color:#ef4444">'+e2.message+'</div>';
     });
 }
 
 function reload() { go(); }
 
+// ── Render table + smart filters ────────────────────────────────
 function draw(rows, serverCount) {
   var af = Object.keys(S.f).filter(function(k){
     var v = S.f[k];
-    if (v === '__all__' || v === null || v === undefined || String(v).trim() === '') return false;
-    if (typeof v === 'object') return (v.min !== '' && v.min !== undefined) || (v.max !== '' && v.max !== undefined);
+    if (!v || v === '__all__') return false;
+    if (typeof v === 'object') return (v.min !== ''&&v.min!==undefined)||(v.max!==''&&v.max!==undefined);
     return true;
   }).length;
+
   document.getElementById('bc').style.display = af ? 'inline-block' : 'none';
-  document.getElementById('sub').textContent = 'comissoes.' + S.t + ' · ' + (serverCount||0).toLocaleString('pt-BR') + ' registros' + (af ? ' (filtrado)' : '');
+  document.getElementById('sub').textContent = 'comissoes.'+S.t+' · '+(serverCount||0).toLocaleString('pt-BR')+' registros'+(af?' (filtrado)':'');
 
   if (!rows.length) {
     document.getElementById('tw').innerHTML = '<div id="msg">Nenhum resultado.</div>';
@@ -233,66 +234,78 @@ function draw(rows, serverCount) {
     return;
   }
 
-  var cascade = CASCADE[S.t] || [];
-
-  // Header labels
-  var h1 = S.cols.map(function(c){ return '<th>' + e(c) + '</th>'; }).join('');
-
-  // Filter row
-  var h2 = S.cols.map(function(c){
-    var m = S.meta[c] || { type: 'text' };
-    var isCascadeChild = cascade.indexOf(c) > 0; // grupo/subgrupo só aparecem depois de linha selecionada
-    if (m.type === 'boolean') {
-      var cur = S.f[c] || '__all__';
-      return '<th><div class="ftog">'
-        + '<button class="' + (cur==='__all__'?'on':'') + '" data-c="' + e(c) + '" data-v="__all__">Todos</button>'
-        + '<button class="' + (cur==='__true__'?'on':'') + '" data-c="' + e(c) + '" data-v="__true__">Sim</button>'
-        + '<button class="' + (cur==='__false__'?'on':'') + '" data-c="' + e(c) + '" data-v="__false__">Não</button>'
-        + '</div></th>';
-    } else if (m.type === 'range') {
-      var rv = S.f[c] || {};
-      return '<th><div class="frange">'
-        + '<input type="number" class="fr" data-c="' + e(c) + '" data-r="min" placeholder="mín" value="' + e(String(rv.min||'')) + '">'
-        + '<span>–</span>'
-        + '<input type="number" class="fr" data-c="' + e(c) + '" data-r="max" placeholder="máx" value="' + e(String(rv.max||'')) + '">'
-        + '</div></th>';
-    } else if (m.type === 'dropdown') {
-      // Cascata: filtrar valores disponíveis com base no filtro pai
-      var vals = m.values || [];
-      if (isCascadeChild) {
-        var parentCol = cascade[cascade.indexOf(c) - 1];
-        var parentVal = S.f[parentCol];
-        if (parentVal && parentVal !== '__all__') {
-          // filtrar linhas já carregadas para ver quais valores existem neste filho
-          vals = getAvailableVals(c, parentCol, parentVal);
-        }
-      }
-      var cur2 = S.f[c] || '';
-      var opts = '<option value="">Todos</option>' + vals.map(function(v){
-        return '<option value="' + e(String(v)) + '"' + (cur2===String(v)?' selected':'') + '>' + e(String(v)) + '</option>';
-      }).join('');
-      return '<th><select class="fd" data-c="' + e(c) + '">' + opts + '</select></th>';
-    } else {
-      var cur3 = S.f[c] || '';
-      return '<th><input class="f" data-c="' + e(c) + '" value="' + e(String(cur3)) + '" placeholder="filtrar…"></th>';
-    }
-  }).join('');
-
-  // Rows
+  var h1 = S.cols.map(function(c){ return '<th>'+e(c)+'</th>'; }).join('');
+  var h2 = S.cols.map(function(c){ return '<th>'+renderFilter(c)+'</th>'; }).join('');
   var tb = rows.map(function(row){
-    return '<tr>' + S.cols.map(function(c){
+    return '<tr>'+S.cols.map(function(c){
       var v = row[c];
-      if (v === null || v === undefined) return '<td><span class="nl">null</span></td>';
-      if (typeof v === 'boolean') return '<td><span class="b' + (v?'t':'f') + '">' + (v ? '✓' : '✗') + '</span></td>';
-      if (typeof v === 'number') return '<td class="nm">' + v.toLocaleString('pt-BR') + '</td>';
-      return '<td title="' + e(String(v)) + '">' + e(String(v)) + '</td>';
-    }).join('') + '</tr>';
+      if (v===null||v===undefined) return '<td><span class="nl">null</span></td>';
+      if (typeof v==='boolean') return '<td><span class="b'+(v?'t':'f')+'">'+(v?'✓':'✗')+'</span></td>';
+      if (typeof v==='number') return '<td class="nm">'+v.toLocaleString('pt-BR')+'</td>';
+      return '<td title="'+e(String(v))+'">'+e(String(v))+'</td>';
+    }).join('')+'</tr>';
   }).join('');
 
   document.getElementById('tw').innerHTML =
-    '<table><thead><tr class="thl">' + h1 + '</tr><tr class="thf">' + h2 + '</tr></thead><tbody>' + tb + '</tbody></table>';
+    '<table><thead><tr class="thl">'+h1+'</tr><tr class="thf">'+h2+'</tr></thead><tbody>'+tb+'</tbody></table>';
 
-  // Bind text inputs
+  bindFilters();
+
+  var tp = Math.ceil((serverCount||0)/PS);
+  var pg = document.getElementById('pg');
+  if (tp>1){
+    pg.style.display='flex';
+    pg.innerHTML = pb('«',0,S.p===0)+pb('‹',S.p-1,S.p===0)
+      +'<span style="color:#94a3b8;font-size:12px">Pág '+(S.p+1)+'/'+tp+'</span>'
+      +pb('›',S.p+1,S.p>=tp-1)+pb('»',tp-1,S.p>=tp-1)
+      +'<span style="color:#64748b;font-size:11px;margin-left:8px">'
+      +((S.p*PS+1).toLocaleString('pt-BR'))+'–'+(Math.min((S.p+1)*PS,serverCount||0).toLocaleString('pt-BR'))
+      +' de '+(serverCount||0).toLocaleString('pt-BR')+'</span>';
+    pg.querySelectorAll('.pb').forEach(function(b2){
+      b2.addEventListener('click', function(){ S.p=parseInt(b2.dataset.p); go(); });
+    });
+  } else { pg.style.display='none'; }
+}
+
+// ── Render a single filter cell ─────────────────────────────────
+function renderFilter(col) {
+  var m = S.meta[col] || { type:'text' };
+  var cur = S.f[col];
+
+  if (m.type === 'boolean') {
+    var bv = cur || '__all__';
+    return '<div class="ftog">'
+      +'<button class="'+(bv==='__all__'?'on':'')+'" data-c="'+e(col)+'" data-v="__all__">Todos</button>'
+      +'<button class="'+(bv==='__true__'?'on':'')+'" data-c="'+e(col)+'" data-v="__true__">Sim</button>'
+      +'<button class="'+(bv==='__false__'?'on':'')+'" data-c="'+e(col)+'" data-v="__false__">Não</button>'
+      +'</div>';
+  }
+
+  if (m.type === 'range') {
+    var rv = (typeof cur==='object' && cur) ? cur : {min:'',max:''};
+    return '<div class="frange">'
+      +'<input type="number" class="fr" data-c="'+e(col)+'" data-r="min" placeholder="mín" value="'+e(String(rv.min||''))+'">'
+      +'<span>–</span>'
+      +'<input type="number" class="fr" data-c="'+e(col)+'" data-r="max" placeholder="máx" value="'+e(String(rv.max||''))+'">'
+      +'</div>';
+  }
+
+  if (m.type === 'dropdown') {
+    var vals = m.values || [];
+    var sv = String(cur||'');
+    var opts = '<option value="">Todos</option>'
+      + vals.map(function(v){
+          return '<option value="'+e(String(v))+'"'+(sv===String(v)?' selected':'')+'>'+e(String(v))+'</option>';
+        }).join('');
+    return '<select class="fd" data-c="'+e(col)+'">'+opts+'</select>';
+  }
+
+  // text
+  return '<input class="f" data-c="'+e(col)+'" value="'+e(String(cur||''))+'" placeholder="filtrar…">';
+}
+
+// ── Bind all filter event listeners ─────────────────────────────
+function bindFilters() {
   document.querySelectorAll('input.f').forEach(function(i){
     i.addEventListener('input', function(x){
       S.f[x.target.dataset.c] = x.target.value;
@@ -300,75 +313,35 @@ function draw(rows, serverCount) {
       go();
     });
   });
-
-  // Bind dropdowns
   document.querySelectorAll('select.fd').forEach(function(sel){
     sel.addEventListener('change', function(x){
+      S.f[x.target.dataset.c] = x.target.value;
+      S.p = 0;
+      go();
+    });
+  });
+  document.querySelectorAll('.ftog button').forEach(function(b){
+    b.addEventListener('click', function(){
+      S.f[b.dataset.c] = b.dataset.v;
+      S.p = 0;
+      go();
+    });
+  });
+  document.querySelectorAll('input.fr').forEach(function(i){
+    i.addEventListener('input', function(x){
       var col = x.target.dataset.c;
-      S.f[col] = x.target.value;
-      // Cascata: limpar filhos
-      var cascade2 = CASCADE[S.t] || [];
-      var idx = cascade2.indexOf(col);
-      if (idx >= 0) {
-        for (var i2 = idx + 1; i2 < cascade2.length; i2++) {
-          S.f[cascade2[i2]] = '';
-        }
-      }
+      var side = x.target.dataset.r;
+      if (!S.f[col]||typeof S.f[col]!=='object') S.f[col]={min:'',max:''};
+      S.f[col][side] = x.target.value;
       S.p = 0;
       go();
     });
   });
-
-  // Bind boolean toggles
-  document.querySelectorAll('.ftog button').forEach(function(b2){
-    b2.addEventListener('click', function(){
-      S.f[b2.dataset.c] = b2.dataset.v;
-      S.p = 0;
-      go();
-    });
-  });
-
-  // Bind range inputs
-  document.querySelectorAll('input.fr').forEach(function(i2){
-    i2.addEventListener('input', function(x){
-      var col = x.target.dataset.c;
-      var rng = x.target.dataset.r; // 'min' or 'max'
-      if (!S.f[col] || typeof S.f[col] !== 'object') S.f[col] = { min:'', max:'' };
-      S.f[col][rng] = x.target.value;
-      S.p = 0;
-      go();
-    });
-  });
-
-  // Pagination
-  var tp = Math.ceil((serverCount||0) / PS);
-  var pg = document.getElementById('pg');
-  if (tp > 1) {
-    pg.style.display = 'flex';
-    pg.innerHTML = pb('«',0,S.p===0) + pb('‹',S.p-1,S.p===0)
-      + '<span style="color:#94a3b8;font-size:12px">Pág ' + (S.p+1) + ' / ' + tp + '</span>'
-      + pb('›',S.p+1,S.p>=tp-1) + pb('»',tp-1,S.p>=tp-1)
-      + '<span style="color:#64748b;font-size:11px;margin-left:8px">'
-      + ((S.p*PS+1).toLocaleString('pt-BR')) + '–' + (Math.min((S.p+1)*PS,serverCount||0).toLocaleString('pt-BR'))
-      + ' de ' + (serverCount||0).toLocaleString('pt-BR') + '</span>';
-    pg.querySelectorAll('.pb').forEach(function(b3){
-      b3.addEventListener('click', function(){ S.p = parseInt(b3.dataset.p); go(); });
-    });
-  } else {
-    pg.style.display = 'none';
-  }
 }
 
-// Retorna valores distintos disponíveis para uma coluna dado um filtro no pai (cascata)
-function getAvailableVals(col, parentCol, parentVal) {
-  var allVals = (S.meta[col] && S.meta[col].values) || [];
-  // Se tiver cache de dados, filtrar; senão retornar todos
-  return allVals;
-}
-
-function pb(l,p,d){ return '<button class="btn pb" data-p="' + p + '"' + (d?' disabled style="opacity:.4"':'') + '>' + l + '</button>'; }
+function pb(l,p,d){ return '<button class="btn pb" data-p="'+p+'"'+(d?' disabled style="opacity:.4"':'')+'>'+l+'</button>'; }
 function e(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function cf(){ S.f = {}; S.p = 0; go(); }
+function cf(){ S.f={}; S.p=0; go(); }
 </script>
 </body>
 </html>
